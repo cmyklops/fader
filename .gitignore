@@ -19,5 +19,6 @@ DerivedData/
 .DS_Store
 *.swp
 *.orig
+*.dmg
 
 # xcodegen spec is intentionally tracked

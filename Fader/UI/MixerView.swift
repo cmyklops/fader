@@ -1,13 +1,17 @@
 import SwiftUI
+import ServiceManagement
 
 struct MixerView: View {
     @Environment(AudioTapManager.self) private var tapManager
+    @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
         VStack(spacing: 0) {
             header
             Divider()
             content
+            Divider()
+            footer
         }
         .frame(width: 320)
     }
@@ -86,6 +90,30 @@ struct MixerView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
         .background(.ultraThinMaterial)
+    }
+
+    private var footer: some View {
+        HStack {
+            Toggle("Launch at Login", isOn: $launchAtLogin)
+                .toggleStyle(.switch)
+                .controlSize(.mini)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .onChange(of: launchAtLogin) { _, newValue in
+                    do {
+                        if newValue {
+                            try SMAppService.mainApp.register()
+                        } else {
+                            try SMAppService.mainApp.unregister()
+                        }
+                    } catch {
+                        print("[Fader] Launch at login failed: \(error)")
+                        launchAtLogin = SMAppService.mainApp.status == .enabled
+                    }
+                }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
     }
 }
 

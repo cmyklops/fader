@@ -23,6 +23,7 @@ targets:
       - sdk: Accelerate.framework
       - sdk: CoreAudio.framework
       - sdk: AudioToolbox.framework
+      - sdk: ServiceManagement.framework
     sources:
       - path: Fader
         excludes:

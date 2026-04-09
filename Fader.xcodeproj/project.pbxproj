@@ -18,11 +18,13 @@
 		C4656D6268CE809A1BE66E81 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AE0AFFDDD8D00666611E2833 /* Assets.xcassets */; };
 		CCBA76A3C25C588DD7833478 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AD7A9CFEADC3473F7BCC66EA /* CoreAudio.framework */; };
 		D80840440110DAA951EC9D36 /* AudioTapManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F7EE24C437D426454EA6E3 /* AudioTapManager.swift */; };
+		EB6FD9143A6F9DBDDF1AA0B7 /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A54C7DCE4863DA140FE43B9 /* ServiceManagement.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		1FBF08DD1030450F64258E84 /* FaderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaderApp.swift; sourceTree = "<group>"; };
 		465F9D091F9A19553DE9DA99 /* AppAudioTap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAudioTap.swift; sourceTree = "<group>"; };
+		4A54C7DCE4863DA140FE43B9 /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
 		51F7EE24C437D426454EA6E3 /* AudioTapManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTapManager.swift; sourceTree = "<group>"; };
 		5569CA7CF10A34017D504335 /* TapDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapDiagnostics.swift; sourceTree = "<group>"; };
 		7DC0718D031461342C9156F1 /* Fader.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Fader.entitlements; sourceTree = "<group>"; };
@@ -45,6 +47,7 @@
 				75FEEE274220EAF3C29F87A5 /* Accelerate.framework in Frameworks */,
 				CCBA76A3C25C588DD7833478 /* CoreAudio.framework in Frameworks */,
 				7995676CD44A06DC2A8900CF /* AudioToolbox.framework in Frameworks */,
+				EB6FD9143A6F9DBDDF1AA0B7 /* ServiceManagement.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -86,6 +89,7 @@
 				80255D9AA9282402DA4BCCD4 /* Accelerate.framework */,
 				D68FEE7F1B42ABF4390772DC /* AudioToolbox.framework */,
 				AD7A9CFEADC3473F7BCC66EA /* CoreAudio.framework */,
+				4A54C7DCE4863DA140FE43B9 /* ServiceManagement.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";

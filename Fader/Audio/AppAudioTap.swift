@@ -76,10 +76,6 @@ final class AppAudioTap {
     /// Creates the process tap, wraps it in a private aggregate device,
     /// attaches an IOProc, and starts the device.
     func start() throws {
-        guard #available(macOS 14.2, *) else {
-            throw TapError.unsupportedOS
-        }
-
         // 1. Create a CATapDescription targeting this process.
         //    muteBehavior .muted means the process's audio is intercepted —
         //    it no longer goes directly to the hardware. We read it, scale it,
@@ -289,7 +285,6 @@ final class AppAudioTap {
     // MARK: - Errors
 
     enum TapError: Error, LocalizedError {
-        case unsupportedOS
         case tapCreationFailed(OSStatus)
         case aggregateDeviceCreationFailed(OSStatus)
         case ioProcCreationFailed(OSStatus)
@@ -297,8 +292,6 @@ final class AppAudioTap {
 
         var errorDescription: String? {
             switch self {
-            case .unsupportedOS:
-                return "Per-app audio tapping requires macOS 14.2 or later."
             case .tapCreationFailed(let code):
                 return "Failed to create process tap (OSStatus \(code))."
             case .aggregateDeviceCreationFailed(let code):
