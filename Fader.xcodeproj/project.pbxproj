@@ -1,0 +1,349 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 54;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		14620F11EBB084B83485FC3C /* AppAudioTap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465F9D091F9A19553DE9DA99 /* AppAudioTap.swift */; };
+		75D2472D60B5C07F7BEC1E6A /* MixerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF949813215B5B4A28726AF /* MixerView.swift */; };
+		92766263FCA13966336CBEFE /* VolumeConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 971FC09CFB41BF4CED54CDF9 /* VolumeConverter.swift */; };
+		B282CF1EA4B795836598778B /* AudioProcessMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FA739336750C590D76FA85B /* AudioProcessMonitor.swift */; };
+		BF9C25CAD2CFF53A9FA6EF06 /* FaderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FBF08DD1030450F64258E84 /* FaderApp.swift */; };
+		C4656D6268CE809A1BE66E81 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AE0AFFDDD8D00666611E2833 /* Assets.xcassets */; };
+		D80840440110DAA951EC9D36 /* AudioTapManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F7EE24C437D426454EA6E3 /* AudioTapManager.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		1FBF08DD1030450F64258E84 /* FaderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaderApp.swift; sourceTree = "<group>"; };
+		465F9D091F9A19553DE9DA99 /* AppAudioTap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAudioTap.swift; sourceTree = "<group>"; };
+		51F7EE24C437D426454EA6E3 /* AudioTapManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTapManager.swift; sourceTree = "<group>"; };
+		7DC0718D031461342C9156F1 /* Fader.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Fader.entitlements; sourceTree = "<group>"; };
+		7FA739336750C590D76FA85B /* AudioProcessMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioProcessMonitor.swift; sourceTree = "<group>"; };
+		971FC09CFB41BF4CED54CDF9 /* VolumeConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeConverter.swift; sourceTree = "<group>"; };
+		AE0AFFDDD8D00666611E2833 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		CBF949813215B5B4A28726AF /* MixerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixerView.swift; sourceTree = "<group>"; };
+		D70CD5AA03F4F4B745F2D905 /* Fader.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Fader.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F98FB3ECDFC1A5C685973625 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		3A7CBCA8692D1D6F4EB3F920 /* Fader */ = {
+			isa = PBXGroup;
+			children = (
+				AE0AFFDDD8D00666611E2833 /* Assets.xcassets */,
+				7DC0718D031461342C9156F1 /* Fader.entitlements */,
+				1FBF08DD1030450F64258E84 /* FaderApp.swift */,
+				F98FB3ECDFC1A5C685973625 /* Info.plist */,
+				CFB2EE01E95A477E2CF722A6 /* Audio */,
+				56757EEC9FB5FF6CFA2C654D /* UI */,
+			);
+			path = Fader;
+			sourceTree = "<group>";
+		};
+		4534AC129B4969435E4DDC2A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D70CD5AA03F4F4B745F2D905 /* Fader.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		56757EEC9FB5FF6CFA2C654D /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				CBF949813215B5B4A28726AF /* MixerView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		CFB2EE01E95A477E2CF722A6 /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				465F9D091F9A19553DE9DA99 /* AppAudioTap.swift */,
+				7FA739336750C590D76FA85B /* AudioProcessMonitor.swift */,
+				51F7EE24C437D426454EA6E3 /* AudioTapManager.swift */,
+				971FC09CFB41BF4CED54CDF9 /* VolumeConverter.swift */,
+			);
+			path = Audio;
+			sourceTree = "<group>";
+		};
+		FB4F61E0929FFD8BE891AE64 = {
+			isa = PBXGroup;
+			children = (
+				3A7CBCA8692D1D6F4EB3F920 /* Fader */,
+				4534AC129B4969435E4DDC2A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D1E7D2647C3B8626D11EDB09 /* Fader */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 81AA70AA6DBCB5841A7613DE /* Build configuration list for PBXNativeTarget "Fader" */;
+			buildPhases = (
+				37E7AA660F8C36ED72662E73 /* Sources */,
+				578567F8678009F8A17691F9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Fader;
+			productName = Fader;
+			productReference = D70CD5AA03F4F4B745F2D905 /* Fader.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		8DEBF0C286BE8BBA2E51C9EA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					D1E7D2647C3B8626D11EDB09 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 2497EEE39760838D52079795 /* Build configuration list for PBXProject "Fader" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = FB4F61E0929FFD8BE891AE64;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D1E7D2647C3B8626D11EDB09 /* Fader */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		578567F8678009F8A17691F9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C4656D6268CE809A1BE66E81 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		37E7AA660F8C36ED72662E73 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				14620F11EBB084B83485FC3C /* AppAudioTap.swift in Sources */,
+				B282CF1EA4B795836598778B /* AudioProcessMonitor.swift in Sources */,
+				D80840440110DAA951EC9D36 /* AudioTapManager.swift in Sources */,
+				BF9C25CAD2CFF53A9FA6EF06 /* FaderApp.swift in Sources */,
+				75D2472D60B5C07F7BEC1E6A /* MixerView.swift in Sources */,
+				92766263FCA13966336CBEFE /* VolumeConverter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0A924775D073DCE7762BB88D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Fader/Fader.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = Fader/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mattwesdock.Fader;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		0E49DC7FA3289F3771E9A5A4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		4117FA20EA6B0F4621824703 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Fader/Fader.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = Fader/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mattwesdock.Fader;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		CD5D9CCE764CD0252585ED0A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2497EEE39760838D52079795 /* Build configuration list for PBXProject "Fader" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0E49DC7FA3289F3771E9A5A4 /* Debug */,
+				CD5D9CCE764CD0252585ED0A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		81AA70AA6DBCB5841A7613DE /* Build configuration list for PBXNativeTarget "Fader" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4117FA20EA6B0F4621824703 /* Debug */,
+				0A924775D073DCE7762BB88D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 8DEBF0C286BE8BBA2E51C9EA /* Project object */;
+}

@@ -1,0 +1,153 @@
+import SwiftUI
+
+struct MixerView: View {
+    @Environment(AudioTapManager.self) private var tapManager
+
+    var body: some View {
+        VStack(spacing: 0) {
+            header
+            Divider()
+            content
+        }
+        .frame(width: 320)
+    }
+
+    // MARK: - Subviews
+
+    private var header: some View {
+        HStack {
+            Image(systemName: "slider.horizontal.3")
+                .foregroundStyle(.secondary)
+            Text("Fader")
+                .font(.headline)
+            Spacer()
+            Button {
+                tapManager.processMonitor.refresh()
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Refresh app list")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if tapManager.entries.isEmpty {
+            emptyState
+        } else {
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(tapManager.entries) { entry in
+                        AppVolumeRow(entry: entry)
+                        if entry.id != tapManager.entries.last?.id {
+                            Divider().padding(.leading, 52)
+                        }
+                    }
+                }
+            }
+            .frame(maxHeight: 400)
+        }
+
+        if let error = tapManager.lastError {
+            errorBanner(error)
+        }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "speaker.slash")
+                .font(.system(size: 32))
+                .foregroundStyle(.tertiary)
+            Text("No audio apps detected")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Text("Play audio in any app to see it here.")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 32)
+    }
+
+    private func errorBanner(_ message: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.yellow)
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(.ultraThinMaterial)
+    }
+}
+
+// MARK: - Per-App Row
+
+struct AppVolumeRow: View {
+    @Bindable var entry: MixerEntry
+
+    var body: some View {
+        HStack(spacing: 10) {
+            appIcon
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.process.name)
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(1)
+                Text(entry.displayLabel)
+                    .font(.caption2)
+                    .monospacedDigit()
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(minWidth: 80, alignment: .leading)
+
+            Slider(value: $entry.sliderValue, in: 0...1)
+                .frame(minWidth: 80)
+                .disabled(entry.isMuted)
+
+            muteButton
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .opacity(entry.isMuted ? 0.5 : 1.0)
+        .animation(.easeInOut(duration: 0.15), value: entry.isMuted)
+    }
+
+    private var appIcon: some View {
+        Group {
+            if let icon = entry.process.icon {
+                Image(nsImage: icon)
+                    .resizable()
+                    .interpolation(.high)
+                    .antialiased(true)
+            } else {
+                Image(systemName: "app.fill")
+                    .resizable()
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(width: 28, height: 28)
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+    }
+
+    private var muteButton: some View {
+        Button {
+            entry.isMuted.toggle()
+        } label: {
+            Image(systemName: entry.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                .font(.system(size: 13))
+                .foregroundStyle(entry.isMuted ? .red : .secondary)
+                .frame(width: 22, height: 22)
+                .contentTransition(.symbolEffect(.replace))
+        }
+        .buttonStyle(.plain)
+        .help(entry.isMuted ? "Unmute" : "Mute")
+    }
+}

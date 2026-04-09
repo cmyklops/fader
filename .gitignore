@@ -1,0 +1,23 @@
+# Xcode
+*.xcuserstate
+xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcworkspace/xcshareddata/swiftpm/
+
+# Build
+build/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Misc
+.DS_Store
+*.swp
+*.orig
+
+# xcodegen spec is intentionally tracked
