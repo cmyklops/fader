@@ -6,18 +6,17 @@ import Foundation
 ///
 /// Mapping:
 ///   sliderValue 0.0  → true silence (amplitude 0.0, shown as 0%)
-///   sliderValue 0.5  → –30 dB       (amplitude ≈ 0.032, shown as 50%)
+///   sliderValue 0.5  → –15 dB       (amplitude ≈ 0.178, shown as 50%)
 ///   sliderValue 1.0  →   0 dB       (amplitude 1.0,     shown as 100%)
 ///
-/// The dB floor is –60 dB — below that we clamp to silence because
-/// the linear amplitude becomes negligibly small (~0.001) and any
-/// further resolution is perceptually meaningless.
+/// The dB floor is –30 dB — this keeps most of the slider's travel
+/// in the perceptually useful range for a per-app volume mixer.
 enum VolumeConverter {
 
     // MARK: - Constants
 
     /// Minimum dB value represented by a slider position above zero.
-    static let minDB: Float = -60.0
+    static let minDB: Float = -30.0
 
     /// Maximum dB value (full volume, unity gain).
     static let maxDB: Float = 0.0

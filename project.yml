@@ -19,6 +19,10 @@ targets:
     type: application
     platform: macOS
     deploymentTarget: "14.2"
+    dependencies:
+      - sdk: Accelerate.framework
+      - sdk: CoreAudio.framework
+      - sdk: AudioToolbox.framework
     sources:
       - path: Fader
         excludes:

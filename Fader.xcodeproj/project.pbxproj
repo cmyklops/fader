@@ -9,10 +9,14 @@
 /* Begin PBXBuildFile section */
 		14620F11EBB084B83485FC3C /* AppAudioTap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465F9D091F9A19553DE9DA99 /* AppAudioTap.swift */; };
 		75D2472D60B5C07F7BEC1E6A /* MixerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF949813215B5B4A28726AF /* MixerView.swift */; };
+		75FEEE274220EAF3C29F87A5 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80255D9AA9282402DA4BCCD4 /* Accelerate.framework */; };
+		7995676CD44A06DC2A8900CF /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D68FEE7F1B42ABF4390772DC /* AudioToolbox.framework */; };
 		92766263FCA13966336CBEFE /* VolumeConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 971FC09CFB41BF4CED54CDF9 /* VolumeConverter.swift */; };
 		B282CF1EA4B795836598778B /* AudioProcessMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FA739336750C590D76FA85B /* AudioProcessMonitor.swift */; };
 		BF9C25CAD2CFF53A9FA6EF06 /* FaderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FBF08DD1030450F64258E84 /* FaderApp.swift */; };
+		C41C72714E9CC295BA9EB217 /* TapDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5569CA7CF10A34017D504335 /* TapDiagnostics.swift */; };
 		C4656D6268CE809A1BE66E81 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AE0AFFDDD8D00666611E2833 /* Assets.xcassets */; };
+		CCBA76A3C25C588DD7833478 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AD7A9CFEADC3473F7BCC66EA /* CoreAudio.framework */; };
 		D80840440110DAA951EC9D36 /* AudioTapManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F7EE24C437D426454EA6E3 /* AudioTapManager.swift */; };
 /* End PBXBuildFile section */
 
@@ -20,14 +24,31 @@
 		1FBF08DD1030450F64258E84 /* FaderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaderApp.swift; sourceTree = "<group>"; };
 		465F9D091F9A19553DE9DA99 /* AppAudioTap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAudioTap.swift; sourceTree = "<group>"; };
 		51F7EE24C437D426454EA6E3 /* AudioTapManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTapManager.swift; sourceTree = "<group>"; };
+		5569CA7CF10A34017D504335 /* TapDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapDiagnostics.swift; sourceTree = "<group>"; };
 		7DC0718D031461342C9156F1 /* Fader.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Fader.entitlements; sourceTree = "<group>"; };
 		7FA739336750C590D76FA85B /* AudioProcessMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioProcessMonitor.swift; sourceTree = "<group>"; };
+		80255D9AA9282402DA4BCCD4 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		971FC09CFB41BF4CED54CDF9 /* VolumeConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeConverter.swift; sourceTree = "<group>"; };
+		AD7A9CFEADC3473F7BCC66EA /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		AE0AFFDDD8D00666611E2833 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CBF949813215B5B4A28726AF /* MixerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixerView.swift; sourceTree = "<group>"; };
+		D68FEE7F1B42ABF4390772DC /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		D70CD5AA03F4F4B745F2D905 /* Fader.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Fader.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F98FB3ECDFC1A5C685973625 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AD61A94C3BE1B53D708104FF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				75FEEE274220EAF3C29F87A5 /* Accelerate.framework in Frameworks */,
+				CCBA76A3C25C588DD7833478 /* CoreAudio.framework in Frameworks */,
+				7995676CD44A06DC2A8900CF /* AudioToolbox.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		3A7CBCA8692D1D6F4EB3F920 /* Fader */ = {
@@ -59,12 +80,23 @@
 			path = UI;
 			sourceTree = "<group>";
 		};
+		CE2D179E9F890837084362CB /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				80255D9AA9282402DA4BCCD4 /* Accelerate.framework */,
+				D68FEE7F1B42ABF4390772DC /* AudioToolbox.framework */,
+				AD7A9CFEADC3473F7BCC66EA /* CoreAudio.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		CFB2EE01E95A477E2CF722A6 /* Audio */ = {
 			isa = PBXGroup;
 			children = (
 				465F9D091F9A19553DE9DA99 /* AppAudioTap.swift */,
 				7FA739336750C590D76FA85B /* AudioProcessMonitor.swift */,
 				51F7EE24C437D426454EA6E3 /* AudioTapManager.swift */,
+				5569CA7CF10A34017D504335 /* TapDiagnostics.swift */,
 				971FC09CFB41BF4CED54CDF9 /* VolumeConverter.swift */,
 			);
 			path = Audio;
@@ -74,6 +106,7 @@
 			isa = PBXGroup;
 			children = (
 				3A7CBCA8692D1D6F4EB3F920 /* Fader */,
+				CE2D179E9F890837084362CB /* Frameworks */,
 				4534AC129B4969435E4DDC2A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -87,6 +120,7 @@
 			buildPhases = (
 				37E7AA660F8C36ED72662E73 /* Sources */,
 				578567F8678009F8A17691F9 /* Resources */,
+				AD61A94C3BE1B53D708104FF /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -150,6 +184,7 @@
 				D80840440110DAA951EC9D36 /* AudioTapManager.swift in Sources */,
 				BF9C25CAD2CFF53A9FA6EF06 /* FaderApp.swift in Sources */,
 				75D2472D60B5C07F7BEC1E6A /* MixerView.swift in Sources */,
+				C41C72714E9CC295BA9EB217 /* TapDiagnostics.swift in Sources */,
 				92766263FCA13966336CBEFE /* VolumeConverter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -3,16 +3,24 @@ import CoreAudio
 
 /// Per-app volume state that persists across launches.
 struct AppVolumePreferences {
-    private static let defaults = UserDefaults.standard
     private static let prefix = "fader.volume."
+    private static let mutePrefix = "fader.mute."
 
     static func save(bundleID: String, sliderValue: Float) {
-        defaults.set(sliderValue, forKey: prefix + bundleID)
+        UserDefaults.standard.set(sliderValue, forKey: prefix + bundleID)
     }
 
     static func load(bundleID: String) -> Float {
-        let stored = defaults.float(forKey: prefix + bundleID)
+        let stored = UserDefaults.standard.float(forKey: prefix + bundleID)
         return stored > 0 ? stored : 1.0
+    }
+
+    static func saveMute(bundleID: String, isMuted: Bool) {
+        UserDefaults.standard.set(isMuted, forKey: mutePrefix + bundleID)
+    }
+
+    static func loadMute(bundleID: String) -> Bool {
+        UserDefaults.standard.bool(forKey: mutePrefix + bundleID)
     }
 }
 
@@ -36,10 +44,13 @@ final class MixerEntry: Identifiable {
     var isMuted: Bool {
         didSet {
             tap.isMuted = isMuted
+            if let bundleID = process.bundleID {
+                AppVolumePreferences.saveMute(bundleID: bundleID, isMuted: isMuted)
+            }
         }
     }
 
-    var id: AudioObjectID { process.objectID }
+    var id: pid_t { process.pid }
 
     var displayLabel: String {
         VolumeConverter.displayString(forSlider: sliderValue)
@@ -49,14 +60,24 @@ final class MixerEntry: Identifiable {
         self.process = process
         self.tap = tap
         let initial: Float
+        let savedMute: Bool
         if let bundleID = process.bundleID {
             initial = AppVolumePreferences.load(bundleID: bundleID)
+            savedMute = AppVolumePreferences.loadMute(bundleID: bundleID)
         } else {
             initial = 1.0
+            savedMute = false
         }
         self.sliderValue = initial
-        self.isMuted = false
-        tap.amplitude = VolumeConverter.sliderToAmplitude(initial)
+        self.isMuted = savedMute
+        tap.isMuted = savedMute
+        let targetAmplitude = VolumeConverter.sliderToAmplitude(initial)
+        if savedMute || targetAmplitude >= 0.99 {
+            tap.amplitude = targetAmplitude
+        } else {
+            // Fade from unity to saved level to avoid audible jump on startup
+            tap.fadeToAmplitude(targetAmplitude)
+        }
     }
 }
 
@@ -73,7 +94,12 @@ final class AudioTapManager {
     private(set) var lastError: String?
 
     private let processMonitor = AudioProcessMonitor()
-    private var activeTaps: [AudioObjectID: AppAudioTap] = [:]
+
+    /// Manually refreshes the list of audio-producing processes.
+    func refresh() {
+        processMonitor.refresh()
+    }
+    private var activeTaps: [pid_t: AppAudioTap] = [:]
 
     init() {
         // Respond to process list changes from the monitor.

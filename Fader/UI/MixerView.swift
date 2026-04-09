@@ -22,7 +22,7 @@ struct MixerView: View {
                 .font(.headline)
             Spacer()
             Button {
-                tapManager.processMonitor.refresh()
+                tapManager.refresh()
             } label: {
                 Image(systemName: "arrow.clockwise")
                     .foregroundStyle(.secondary)
