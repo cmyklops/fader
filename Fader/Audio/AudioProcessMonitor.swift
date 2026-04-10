@@ -103,7 +103,7 @@ final class AudioProcessMonitor {
             block
         )
         var isRunAddr = AudioObjectPropertyAddress(
-            mSelector: kAudioProcessPropertyIsRunningOutput,
+            mSelector: kAudioProcessPropertyIsRunning,
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
@@ -120,7 +120,7 @@ final class AudioProcessMonitor {
         let toAdd = newSet.subtracting(isRunningListenerObjectIDs)
 
         var address = AudioObjectPropertyAddress(
-            mSelector: kAudioProcessPropertyIsRunningOutput,
+            mSelector: kAudioProcessPropertyIsRunning,
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
@@ -168,20 +168,18 @@ final class AudioProcessMonitor {
 
         let selfPID = ProcessInfo.processInfo.processIdentifier
 
-        // Step 1: Map every audio objectID → its PID, keeping only those with active output.
+        // Build the Dock-app lookup first so Step 1 can use it per-object.
+        let dockApps = NSWorkspace.shared.runningApplications.filter {
+            $0.activationPolicy == .regular && $0.processIdentifier != selfPID
+        }
+        let dockAppByPID = Dictionary(uniqueKeysWithValues: dockApps.map { ($0.processIdentifier, $0) })
+
+        // Step 1: Map every audio objectID → its PID, keeping only those with active audio.
+        // Use kAudioProcessPropertyIsRunning (not isRunningOutput) so we catch all audio
+        // activity — some apps (FaceTime VoIP, Firefox sandboxed helpers) don't set
+        // isRunningOutput even when actively producing sound.
         var objToPID: [(AudioObjectID, pid_t)] = []
         for objectID in objectIDs {
-            // Check if this process has active audio output.
-            var isRunAddr = AudioObjectPropertyAddress(
-                mSelector: kAudioProcessPropertyIsRunningOutput,
-                mScope: kAudioObjectPropertyScopeGlobal,
-                mElement: kAudioObjectPropertyElementMain
-            )
-            var isRunning: UInt32 = 0
-            var isRunSize = UInt32(MemoryLayout<UInt32>.size)
-            AudioObjectGetPropertyData(objectID, &isRunAddr, 0, nil, &isRunSize, &isRunning)
-            guard isRunning != 0 else { continue }
-
             var pidAddress = AudioObjectPropertyAddress(
                 mSelector: kAudioProcessPropertyPID,
                 mScope: kAudioObjectPropertyScopeGlobal,
@@ -191,16 +189,23 @@ final class AudioProcessMonitor {
             var pidSize = UInt32(MemoryLayout<pid_t>.size)
             let st = AudioObjectGetPropertyData(objectID, &pidAddress, 0, nil, &pidSize, &pid)
             guard st == kAudioHardwareNoError, pid > 0, pid != selfPID else { continue }
+
+            var isRunAddr = AudioObjectPropertyAddress(
+                mSelector: kAudioProcessPropertyIsRunning,
+                mScope: kAudioObjectPropertyScopeGlobal,
+                mElement: kAudioObjectPropertyElementMain
+            )
+            var isRunning: UInt32 = 0
+            var isRunSize = UInt32(MemoryLayout<UInt32>.size)
+            AudioObjectGetPropertyData(objectID, &isRunAddr, 0, nil, &isRunSize, &isRunning)
+            guard isRunning != 0 else { continue }
+
             objToPID.append((objectID, pid))
         }
 
         // Step 2: For each PID, find the owning Dock app by walking PPID.
         // Cache PID → parent app PID + NSRunningApplication.
         var appForPID: [pid_t: NSRunningApplication] = [:]
-        let dockApps = NSWorkspace.shared.runningApplications.filter {
-            $0.activationPolicy == .regular && $0.processIdentifier != selfPID
-        }
-        let dockAppByPID = Dictionary(uniqueKeysWithValues: dockApps.map { ($0.processIdentifier, $0) })
 
         func findParentApp(for pid: pid_t) -> NSRunningApplication? {
             if let cached = appForPID[pid] { return cached }
@@ -222,6 +227,20 @@ final class AudioProcessMonitor {
                     return app
                 }
                 current = ppid
+            }
+            // Fallback: check if the process executable is inside an app bundle.
+            // This catches sandboxed helper processes (e.g. Firefox Web Content, GPU process)
+            // whose PPID chain doesn't trace back through the Dock app's PID.
+            var pathBuffer = [CChar](repeating: 0, count: Int(MAXPATHLEN))
+            if proc_pidpath(pid, &pathBuffer, UInt32(MAXPATHLEN)) > 0 {
+                let execPath = String(cString: pathBuffer)
+                for app in dockApps {
+                    if let bundlePath = app.bundleURL?.path,
+                       execPath.hasPrefix(bundlePath + "/") {
+                        appForPID[pid] = app
+                        return app
+                    }
+                }
             }
             return nil
         }

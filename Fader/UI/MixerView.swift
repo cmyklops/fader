@@ -1,9 +1,40 @@
 import SwiftUI
 import ServiceManagement
 
+// MARK: - Vertical Slider (NSSlider wrapper)
+
+struct VerticalSlider: NSViewRepresentable {
+    @Binding var value: Float
+
+    func makeNSView(context: Context) -> NSSlider {
+        let slider = NSSlider(value: Double(value), minValue: 0, maxValue: 1,
+                              target: context.coordinator, action: #selector(Coordinator.valueChanged(_:)))
+        slider.isVertical = true
+        slider.controlSize = .small
+        return slider
+    }
+
+    func updateNSView(_ slider: NSSlider, context: Context) {
+        if abs(slider.floatValue - value) > 0.001 {
+            slider.floatValue = value
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(value: $value) }
+
+    final class Coordinator: NSObject {
+        var value: Binding<Float>
+        init(value: Binding<Float>) { self.value = value }
+        @objc func valueChanged(_ sender: NSSlider) {
+            value.wrappedValue = sender.floatValue
+        }
+    }
+}
+
 struct MixerView: View {
     @Environment(AudioTapManager.self) private var tapManager
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
+    @AppStorage("fader.verticalSliders") private var verticalSliders = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -13,7 +44,8 @@ struct MixerView: View {
             Divider()
             footer
         }
-        .frame(width: 320)
+        .frame(width: verticalSliders ? max(CGFloat(tapManager.entries.count) * 56 + 24, 140) : 320)
+        .animation(.easeInOut(duration: 0.2), value: verticalSliders)
     }
 
     // MARK: - Subviews
@@ -33,6 +65,15 @@ struct MixerView: View {
             }
             .buttonStyle(.plain)
             .help("Refresh app list")
+            Button {
+                verticalSliders.toggle()
+            } label: {
+                Image(systemName: verticalSliders ? "slider.horizontal.3" : "slider.vertical.3")
+                    .foregroundStyle(.secondary)
+                    .contentTransition(.symbolEffect(.replace))
+            }
+            .buttonStyle(.plain)
+            .help(verticalSliders ? "Switch to horizontal" : "Switch to vertical")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -42,6 +83,18 @@ struct MixerView: View {
     private var content: some View {
         if tapManager.entries.isEmpty {
             emptyState
+        } else if verticalSliders {
+            ScrollView(.horizontal) {
+                HStack(spacing: 8) {
+                    ForEach(tapManager.entries) { entry in
+                        AppVolumeColumn(entry: entry)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity)
+            }
+            .frame(maxHeight: 240)
         } else {
             ScrollView {
                 LazyVStack(spacing: 0) {
@@ -111,13 +164,80 @@ struct MixerView: View {
                         launchAtLogin = SMAppService.mainApp.status == .enabled
                     }
                 }
+            Spacer()
+            Button {
+                NSApplication.shared.terminate(nil)
+            } label: {
+                Image(systemName: "power")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Quit Fader")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
     }
 }
 
-// MARK: - Per-App Row
+// MARK: - Per-App Column (Vertical)
+
+struct AppVolumeColumn: View {
+    @Bindable var entry: MixerEntry
+
+    var body: some View {
+        VStack(spacing: 6) {
+            muteButton
+
+            VerticalSlider(value: $entry.sliderValue)
+                .frame(width: 28, height: 140)
+                .disabled(entry.isMuted)
+
+            Text(entry.displayLabel)
+                .font(.caption2)
+                .monospacedDigit()
+                .foregroundStyle(.tertiary)
+
+            appIcon
+        }
+        .frame(width: 48)
+        .opacity(entry.isMuted ? 0.5 : 1.0)
+        .animation(.easeInOut(duration: 0.15), value: entry.isMuted)
+    }
+
+    private var appIcon: some View {
+        Group {
+            if let icon = entry.process.icon {
+                Image(nsImage: icon)
+                    .resizable()
+                    .interpolation(.high)
+                    .antialiased(true)
+            } else {
+                Image(systemName: "app.fill")
+                    .resizable()
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(width: 28, height: 28)
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .help(entry.process.name)
+    }
+
+    private var muteButton: some View {
+        Button {
+            entry.isMuted.toggle()
+        } label: {
+            Image(systemName: entry.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                .font(.system(size: 13))
+                .foregroundStyle(entry.isMuted ? .red : .secondary)
+                .frame(width: 22, height: 22)
+                .contentTransition(.symbolEffect(.replace))
+        }
+        .buttonStyle(.plain)
+        .help(entry.isMuted ? "Unmute" : "Mute")
+    }
+}
+
+// MARK: - Per-App Row (Horizontal)
 
 struct AppVolumeRow: View {
     @Bindable var entry: MixerEntry
