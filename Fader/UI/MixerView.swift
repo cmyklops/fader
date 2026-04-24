@@ -1,63 +1,5 @@
 import SwiftUI
 import ServiceManagement
-import AppKit
-
-// MARK: - Window fade-out on dismiss
-
-/// Hooks into the underlying NSWindow and fades it out when the user
-/// clicks outside the MenuBarExtra panel (i.e. the window resigns key).
-private struct WindowFadeModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        content.background(WindowFadeInstaller())
-    }
-}
-
-private struct WindowFadeInstaller: NSViewRepresentable {
-    func makeNSView(context: Context) -> _WindowObservingView {
-        let view = _WindowObservingView()
-        view.onWindowAttached = { window in
-            context.coordinator.attach(to: window)
-        }
-        return view
-    }
-    func updateNSView(_ nsView: _WindowObservingView, context: Context) {}
-    func makeCoordinator() -> Coordinator { Coordinator() }
-
-    final class Coordinator: NSObject {
-        private var observer: Any?
-
-        func attach(to window: NSWindow) {
-            guard observer == nil else { return }
-            observer = NotificationCenter.default.addObserver(
-                forName: NSWindow.didResignKeyNotification,
-                object: window,
-                queue: .main
-            ) { [weak window] _ in
-                guard let window else { return }
-                NSAnimationContext.runAnimationGroup { ctx in
-                    ctx.duration = 0.12
-                    ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
-                    window.animator().alphaValue = 0
-                } completionHandler: {
-                    window.alphaValue = 1
-                }
-            }
-        }
-
-        deinit {
-            if let observer { NotificationCenter.default.removeObserver(observer) }
-        }
-    }
-}
-
-/// Custom NSView subclass that reliably reports when it's added to a window.
-final class _WindowObservingView: NSView {
-    var onWindowAttached: ((NSWindow) -> Void)?
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        if let window { onWindowAttached?(window) }
-    }
-}
 
 // MARK: - Vertical Slider (NSSlider wrapper)
 
@@ -105,7 +47,6 @@ struct MixerView: View {
         .frame(width: verticalSliders ? max(CGFloat(tapManager.entries.count) * 56 + 24, 140) : 320)
         .fixedSize(horizontal: false, vertical: true)
         .animation(.easeInOut(duration: 0.2), value: verticalSliders)
-        .modifier(WindowFadeModifier())
     }
 
     // MARK: - Subviews
