@@ -24,13 +24,18 @@ final class AudioProcess: Identifiable {
     /// The application icon, if available.
     let icon: NSImage?
 
-    init(objectID: AudioObjectID, allObjectIDs: [AudioObjectID], pid: pid_t, bundleID: String?, name: String, icon: NSImage?) {
+    /// Whether any of this app's audio processes are currently active (non-zero isRunning).
+    /// False when the app is paused/silent but still registered with CoreAudio.
+    var isRunning: Bool
+
+    init(objectID: AudioObjectID, allObjectIDs: [AudioObjectID], pid: pid_t, bundleID: String?, name: String, icon: NSImage?, isRunning: Bool) {
         self.objectID = objectID
         self.allObjectIDs = allObjectIDs
         self.pid = pid
         self.bundleID = bundleID
         self.name = name
         self.icon = icon
+        self.isRunning = isRunning
     }
 
     var id: pid_t { pid }
@@ -46,6 +51,7 @@ final class AudioProcessMonitor {
     private(set) var processes: [pid_t: AudioProcess] = [:]
 
     private var listenerBlock: AudioObjectPropertyListenerBlock?
+    private var isRunningListenerBlock: AudioObjectPropertyListenerBlock?
     private var isRunningListenerObjectIDs: Set<AudioObjectID> = []
 
     init() {
@@ -62,12 +68,27 @@ final class AudioProcessMonitor {
     // MARK: - Private
 
     private func startMonitoring() {
-        let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
+        // Block for kAudioHardwarePropertyProcessObjectList changes (new process registered
+        // or unregistered). Does an immediate fetch plus a deferred second fetch 500ms later
+        // because some helpers (Firefox renderer, Electron) aren't marked isRunning yet
+        // at the moment the notification fires.
+        let processListBlock: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
+            Task { @MainActor [weak self] in
+                self?.processes = self?.fetchProcesses() ?? [:]
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                self?.processes = self?.fetchProcesses() ?? [:]
+            }
+        }
+        listenerBlock = processListBlock
+
+        // Separate block for per-process kAudioProcessPropertyIsRunning changes (play/pause).
+        // No delay needed — the state is already set when this fires.
+        let isRunningBlock: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
             Task { @MainActor [weak self] in
                 self?.processes = self?.fetchProcesses() ?? [:]
             }
         }
-        listenerBlock = block
+        isRunningListenerBlock = isRunningBlock
 
         processes = fetchProcesses()
 
@@ -81,7 +102,7 @@ final class AudioProcessMonitor {
             AudioObjectID(kAudioObjectSystemObject),
             &address,
             DispatchQueue.main,
-            block
+            processListBlock
         )
 
         if status != kAudioHardwareNoError {
@@ -90,28 +111,32 @@ final class AudioProcessMonitor {
     }
 
     private func stopMonitoring() {
-        guard let block = listenerBlock else { return }
-        var address = AudioObjectPropertyAddress(
-            mSelector: kAudioHardwarePropertyProcessObjectList,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-        AudioObjectRemovePropertyListenerBlock(
-            AudioObjectID(kAudioObjectSystemObject),
-            &address,
-            DispatchQueue.main,
-            block
-        )
-        var isRunAddr = AudioObjectPropertyAddress(
-            mSelector: kAudioProcessPropertyIsRunning,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-        for objID in isRunningListenerObjectIDs {
-            AudioObjectRemovePropertyListenerBlock(objID, &isRunAddr, DispatchQueue.main, block)
+        if let block = listenerBlock {
+            var address = AudioObjectPropertyAddress(
+                mSelector: kAudioHardwarePropertyProcessObjectList,
+                mScope: kAudioObjectPropertyScopeGlobal,
+                mElement: kAudioObjectPropertyElementMain
+            )
+            AudioObjectRemovePropertyListenerBlock(
+                AudioObjectID(kAudioObjectSystemObject),
+                &address,
+                DispatchQueue.main,
+                block
+            )
+            listenerBlock = nil
+        }
+        if let block = isRunningListenerBlock {
+            var isRunAddr = AudioObjectPropertyAddress(
+                mSelector: kAudioProcessPropertyIsRunning,
+                mScope: kAudioObjectPropertyScopeGlobal,
+                mElement: kAudioObjectPropertyElementMain
+            )
+            for objID in isRunningListenerObjectIDs {
+                AudioObjectRemovePropertyListenerBlock(objID, &isRunAddr, DispatchQueue.main, block)
+            }
+            isRunningListenerBlock = nil
         }
         isRunningListenerObjectIDs.removeAll()
-        listenerBlock = nil
     }
 
     private func updateIsRunningListeners(allObjectIDs: [AudioObjectID]) {
@@ -125,7 +150,7 @@ final class AudioProcessMonitor {
             mElement: kAudioObjectPropertyElementMain
         )
 
-        guard let block = listenerBlock else { return }
+        guard let block = isRunningListenerBlock else { return }
 
         for objID in toRemove {
             AudioObjectRemovePropertyListenerBlock(objID, &address, DispatchQueue.main, block)
@@ -174,11 +199,12 @@ final class AudioProcessMonitor {
         }
         let dockAppByPID = Dictionary(uniqueKeysWithValues: dockApps.map { ($0.processIdentifier, $0) })
 
-        // Step 1: Map every audio objectID → its PID, keeping only those with active audio.
-        // Use kAudioProcessPropertyIsRunning (not isRunningOutput) so we catch all audio
-        // activity — some apps (FaceTime VoIP, Firefox sandboxed helpers) don't set
-        // isRunningOutput even when actively producing sound.
+        // Step 1: Map every audio objectID → its PID.
+        // Include ALL registered processes (playing or paused) so apps like Tidal show up
+        // in the mixer even when not actively producing audio. Track isRunning separately
+        // per objectID so we can report the playing/paused indicator to the UI.
         var objToPID: [(AudioObjectID, pid_t)] = []
+        var isRunningByObjID: [AudioObjectID: Bool] = [:]
         for objectID in objectIDs {
             var pidAddress = AudioObjectPropertyAddress(
                 mSelector: kAudioProcessPropertyPID,
@@ -198,7 +224,7 @@ final class AudioProcessMonitor {
             var isRunning: UInt32 = 0
             var isRunSize = UInt32(MemoryLayout<UInt32>.size)
             AudioObjectGetPropertyData(objectID, &isRunAddr, 0, nil, &isRunSize, &isRunning)
-            guard isRunning != 0 else { continue }
+            isRunningByObjID[objectID] = isRunning != 0
 
             objToPID.append((objectID, pid))
         }
@@ -264,13 +290,16 @@ final class AudioProcessMonitor {
             guard let app = dockAppByPID[appPID] else { continue }
             guard let name = app.localizedName, !name.isEmpty else { continue }
             let primary = primaryObjectID[appPID] ?? objectIDs[0]
+            // App is considered running if ANY of its audio objects are active.
+            let running = objectIDs.contains { isRunningByObjID[$0] == true }
             result[appPID] = AudioProcess(
                 objectID: primary,
                 allObjectIDs: objectIDs,
                 pid: appPID,
                 bundleID: app.bundleIdentifier,
                 name: name,
-                icon: app.icon
+                icon: app.icon,
+                isRunning: running
             )
         }
         return result

@@ -1,5 +1,6 @@
 import Foundation
 import CoreAudio
+import AppKit
 
 /// Per-app volume state that persists across launches.
 struct AppVolumePreferences {
@@ -50,6 +51,11 @@ final class MixerEntry: Identifiable {
         }
     }
 
+    /// Whether the app is currently producing audio output.
+    /// Apps remain in the mixer list when paused (e.g. Tidal paused) so users
+    /// can pre-set volumes; this flag drives the visual "active" indicator.
+    var isPlayingAudio: Bool = true
+
     var id: pid_t { process.pid }
 
     var displayLabel: String {
@@ -94,18 +100,17 @@ final class AudioTapManager {
     private(set) var lastError: String?
 
     private let processMonitor = AudioProcessMonitor()
+    private var activeTaps: [pid_t: AppAudioTap] = [:]
+
+    init() {
+        startObservingProcesses()
+    }
+
+    // MARK: - Public
 
     /// Manually refreshes the list of audio-producing processes.
     func refresh() {
         processMonitor.refresh()
-    }
-    private var activeTaps: [pid_t: AppAudioTap] = [:]
-
-    init() {
-        // Respond to process list changes from the monitor.
-        // We use a periodic check via withObservationTracking since
-        // AudioProcessMonitor is @Observable.
-        startObservingProcesses()
     }
 
     // MARK: - Private
@@ -127,18 +132,31 @@ final class AudioTapManager {
         }
     }
 
+    private func removeEntry(for pid: pid_t) {
+        guard activeTaps[pid] != nil || entries.contains(where: { $0.id == pid }) else { return }
+        activeTaps[pid]?.stop()
+        activeTaps.removeValue(forKey: pid)
+        entries.removeAll { $0.id == pid }
+    }
+
     private func syncProcesses() {
         let currentProcesses = processMonitor.processes
 
-        // Remove taps for processes that are gone.
-        let removedIDs = Set(activeTaps.keys).subtracting(currentProcesses.keys)
-        for id in removedIDs {
-            activeTaps[id]?.stop()
-            activeTaps.removeValue(forKey: id)
-            entries.removeAll { $0.id == id }
+        // Use NSWorkspace (not CoreAudio) to determine if an app has actually quit.
+        // CoreAudio removes processes from its list when they go silent/paused,
+        // so we must not use it as the removal signal.
+        let livePIDs = Set(NSWorkspace.shared.runningApplications.map { $0.processIdentifier })
+        for pid in Array(activeTaps.keys) where !livePIDs.contains(pid) {
+            removeEntry(for: pid)
         }
 
-        // Add taps for new processes.
+        // Update playing/paused indicator. An entry stays in the list even when
+        // isPlayingAudio is false (app paused); it's only removed when the app quits.
+        for entry in entries {
+            entry.isPlayingAudio = currentProcesses[entry.id]?.isRunning ?? false
+        }
+
+        // Add taps for newly-discovered audio-producing processes.
         let addedIDs = Set(currentProcesses.keys).subtracting(activeTaps.keys)
         for id in addedIDs {
             guard let process = currentProcesses[id] else { continue }
@@ -146,7 +164,9 @@ final class AudioTapManager {
             do {
                 try tap.start()
                 activeTaps[id] = tap
-                entries.append(MixerEntry(process: process, tap: tap))
+                let entry = MixerEntry(process: process, tap: tap)
+                entry.isPlayingAudio = process.isRunning
+                entries.append(entry)
             } catch {
                 lastError = error.localizedDescription
                 print("[AudioTapManager] Failed to tap \(process.name): \(error)")

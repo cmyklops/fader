@@ -45,6 +45,7 @@ struct MixerView: View {
             footer
         }
         .frame(width: verticalSliders ? max(CGFloat(tapManager.entries.count) * 56 + 24, 140) : 320)
+        .fixedSize(horizontal: false, vertical: true)
         .animation(.easeInOut(duration: 0.2), value: verticalSliders)
     }
 
@@ -74,6 +75,14 @@ struct MixerView: View {
             }
             .buttonStyle(.plain)
             .help(verticalSliders ? "Switch to horizontal" : "Switch to vertical")
+            Button {
+                NSApplication.shared.terminate(nil)
+            } label: {
+                Image(systemName: "power")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Quit Fader")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -164,15 +173,6 @@ struct MixerView: View {
                         launchAtLogin = SMAppService.mainApp.status == .enabled
                     }
                 }
-            Spacer()
-            Button {
-                NSApplication.shared.terminate(nil)
-            } label: {
-                Image(systemName: "power")
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-            .help("Quit Fader")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
@@ -202,6 +202,7 @@ struct AppVolumeColumn: View {
         .frame(width: 48)
         .opacity(entry.isMuted ? 0.5 : 1.0)
         .animation(.easeInOut(duration: 0.15), value: entry.isMuted)
+        .animation(.easeInOut(duration: 0.2), value: entry.isPlayingAudio)
     }
 
     private var appIcon: some View {
@@ -219,7 +220,9 @@ struct AppVolumeColumn: View {
         }
         .frame(width: 28, height: 28)
         .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-        .help(entry.process.name)
+        .opacity(entry.isPlayingAudio ? 1.0 : 0.55)
+        .saturation(entry.isPlayingAudio ? 1.0 : 0.4)
+        .help(entry.isPlayingAudio ? entry.process.name : "\(entry.process.name) (paused)")
     }
 
     private var muteButton: some View {
@@ -266,6 +269,7 @@ struct AppVolumeRow: View {
         .padding(.vertical, 8)
         .opacity(entry.isMuted ? 0.5 : 1.0)
         .animation(.easeInOut(duration: 0.15), value: entry.isMuted)
+        .animation(.easeInOut(duration: 0.2), value: entry.isPlayingAudio)
     }
 
     private var appIcon: some View {
@@ -283,6 +287,8 @@ struct AppVolumeRow: View {
         }
         .frame(width: 28, height: 28)
         .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .opacity(entry.isPlayingAudio ? 1.0 : 0.55)
+        .saturation(entry.isPlayingAudio ? 1.0 : 0.4)
     }
 
     private var muteButton: some View {
