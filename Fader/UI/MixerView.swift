@@ -69,7 +69,7 @@ struct MixerView: View {
             Button {
                 verticalSliders.toggle()
             } label: {
-                Image(systemName: verticalSliders ? "slider.horizontal.3" : "slider.vertical.3")
+                Image(systemName: verticalSliders ? "arrow.left.arrow.right" : "arrow.up.arrow.down")
                     .foregroundStyle(.secondary)
                     .contentTransition(.symbolEffect(.replace))
             }
