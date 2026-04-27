@@ -101,9 +101,27 @@ final class AudioTapManager {
 
     private let processMonitor = AudioProcessMonitor()
     private var activeTaps: [pid_t: AppAudioTap] = [:]
+    private var defaultOutputDeviceListenerBlock: AudioObjectPropertyListenerBlock?
 
     init() {
         startObservingProcesses()
+        startObservingDefaultOutputDevice()
+    }
+
+    deinit {
+        if let block = defaultOutputDeviceListenerBlock {
+            var address = AudioObjectPropertyAddress(
+                mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+                mScope: kAudioObjectPropertyScopeGlobal,
+                mElement: kAudioObjectPropertyElementMain
+            )
+            AudioObjectRemovePropertyListenerBlock(
+                AudioObjectID(kAudioObjectSystemObject),
+                &address,
+                DispatchQueue.main,
+                block
+            )
+        }
     }
 
     // MARK: - Public
@@ -119,6 +137,38 @@ final class AudioTapManager {
         // Trigger initial sync then observe changes.
         syncProcesses()
         observeProcessMonitor()
+    }
+
+    private func startObservingDefaultOutputDevice() {
+        let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
+            Task { @MainActor [weak self] in
+                self?.restartAllTaps()
+            }
+        }
+        defaultOutputDeviceListenerBlock = block
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        AudioObjectAddPropertyListenerBlock(
+            AudioObjectID(kAudioObjectSystemObject),
+            &address,
+            DispatchQueue.main,
+            block
+        )
+    }
+
+    private func restartAllTaps() {
+        for (pid, tap) in activeTaps {
+            tap.stop()
+            do {
+                try tap.start()
+            } catch {
+                lastError = error.localizedDescription
+                print("[AudioTapManager] Failed to restart tap for pid=\(pid) after output device change: \(error)")
+            }
+        }
     }
 
     private func observeProcessMonitor() {
