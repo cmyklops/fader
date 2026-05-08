@@ -39,6 +39,14 @@ final class AudioProcess: Identifiable {
     }
 
     var id: pid_t { pid }
+
+    var objectIDSignature: String {
+        Self.objectIDSignature(for: allObjectIDs)
+    }
+
+    static func objectIDSignature(for objectIDs: [AudioObjectID]) -> String {
+        objectIDs.sorted().map(String.init).joined(separator: ",")
+    }
 }
 
 /// Monitors the system for audio-producing processes and publishes the
@@ -58,11 +66,22 @@ final class AudioProcessMonitor {
         startMonitoring()
     }
 
+    deinit {
+        MainActor.assumeIsolated {
+            stopMonitoring()
+        }
+    }
+
     // MARK: - Public
 
     /// Fetches the current process list immediately (one-shot refresh).
     func refresh() {
         processes = fetchProcesses()
+    }
+
+    func shutdown() {
+        stopMonitoring()
+        processes = [:]
     }
 
     // MARK: - Private
@@ -259,7 +278,11 @@ final class AudioProcessMonitor {
             // whose PPID chain doesn't trace back through the Dock app's PID.
             var pathBuffer = [CChar](repeating: 0, count: Int(MAXPATHLEN))
             if proc_pidpath(pid, &pathBuffer, UInt32(MAXPATHLEN)) > 0 {
-                let execPath = String(cString: pathBuffer)
+                let pathLength = pathBuffer.firstIndex(of: 0) ?? pathBuffer.count
+                let execPath = String(
+                    decoding: pathBuffer.prefix(pathLength).map { UInt8(bitPattern: $0) },
+                    as: UTF8.self
+                )
                 for app in dockApps {
                     if let bundlePath = app.bundleURL?.path,
                        execPath.hasPrefix(bundlePath + "/") {

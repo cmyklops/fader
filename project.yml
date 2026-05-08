@@ -6,6 +6,11 @@ options:
   xcodeVersion: "16.0"
   generateEmptyDirectories: true
 
+packages:
+  swift-atomics:
+    url: https://github.com/apple/swift-atomics.git
+    from: 1.2.0
+
 settings:
   base:
     SWIFT_VERSION: 6.0
@@ -24,6 +29,8 @@ targets:
       - sdk: CoreAudio.framework
       - sdk: AudioToolbox.framework
       - sdk: ServiceManagement.framework
+      - package: swift-atomics
+        product: Atomics
     sources:
       - path: Fader
         excludes:
@@ -38,8 +45,8 @@ targets:
         CFBundleShortVersionString: "0.1.0"
         NSPrincipalClass: NSApplication
         LSUIElement: true
-        NSMicrophoneUsageDescription: "Fader needs access to system audio to control per-app volume."
-        NSAudioCaptureUsageDescription: "Fader needs access to system audio to control per-app volume."
+        NSMicrophoneUsageDescription: "Fader does not record microphone audio. This key is present only for macOS audio permission compatibility."
+        NSAudioCaptureUsageDescription: "Fader captures system and app output locally so it can control per-app volume. It does not record or transmit audio."
         NSHighResolutionCapable: true
         LSApplicationCategoryType: public.app-category.music
     entitlements:
@@ -57,3 +64,21 @@ targets:
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1.0
         SWIFT_EMIT_LOC_STRINGS: YES
+  FaderTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.2"
+    sources:
+      - path: FaderTests
+    dependencies:
+      - target: Fader
+    settings:
+      base:
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        GENERATE_INFOPLIST_FILE: YES
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/../Frameworks"
+          - "@loader_path/../Frameworks"
+        PRODUCT_BUNDLE_IDENTIFIER: com.mattwesdock.FaderTests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Fader.app/Contents/MacOS/Fader"

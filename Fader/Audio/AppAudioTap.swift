@@ -2,84 +2,64 @@ import Foundation
 import CoreAudio
 import AudioToolbox
 import Accelerate
-import os.lock
 import os
 
 private let logger = Logger(subsystem: "com.mattwesdock.Fader", category: "AppAudioTap")
 
 /// Manages an audio tap for a single application process.
-/// Intercepts the process's audio output, scales samples by a volume
-/// factor, and routes the result to the current default output device.
 final class AppAudioTap {
 
     // MARK: - Properties
 
     let process: AudioProcess
+    private let parameters: RealtimeTapParameters
 
-    /// Linear amplitude scalar [0, 1] derived from the dB-linear slider.
-    /// Written from the main thread, read from the real-time audio thread.
-    /// Uses an atomic store/load pattern via a lock-protected backing value.
     var amplitude: Float {
-        get {
-            os_unfair_lock_lock(&_lock)
-            defer { os_unfair_lock_unlock(&_lock) }
-            return _amplitude
-        }
-        set {
-            os_unfair_lock_lock(&_lock)
-            _amplitude = newValue
-            _fadeTarget = newValue
-            _fadeStep = 0
-            os_unfair_lock_unlock(&_lock)
-        }
+        get { parameters.amplitude }
+        set { parameters.amplitude = newValue }
     }
 
     var isMuted: Bool {
-        get {
-            os_unfair_lock_lock(&_lock)
-            defer { os_unfair_lock_unlock(&_lock) }
-            return _isMuted
-        }
-        set {
-            os_unfair_lock_lock(&_lock)
-            _isMuted = newValue
-            os_unfair_lock_unlock(&_lock)
-        }
+        get { parameters.isMuted }
+        set { parameters.isMuted = newValue }
     }
 
-    // MARK: - Private
+    private(set) var status: TapStatus = .stopped
+    private(set) var configuration: TapConfiguration?
 
-    private var _lock = os_unfair_lock()
-    private var _amplitude: Float = 1.0
-    private var _fadeTarget: Float = 1.0
-    private var _fadeStep: Float = 0.0
-    private var _isMuted: Bool = false
-    private var _ioProcCallCount: UInt64 = 0
+    // MARK: - Private
 
     private var tapID: AudioObjectID = kAudioObjectUnknown
     private var aggregateDeviceID: AudioObjectID = kAudioObjectUnknown
     private var ioProcID: AudioDeviceIOProcID?
+    private var tapFormat = AudioStreamBasicDescription()
+
+    private var renderGain: Float
+    private var renderTargetGain: Float
+    private var renderRampRemaining = 0
+    private var renderRampStep: Float = 0.0
+    private var renderRampSamples = 256
 
     // MARK: - Init / Deinit
 
-    init(process: AudioProcess, initialAmplitude: Float = 1.0) {
+    init(process: AudioProcess, initialAmplitude: Float = 1.0, isMuted: Bool = false) {
         self.process = process
-        self._amplitude = initialAmplitude
+        self.parameters = RealtimeTapParameters(amplitude: initialAmplitude, isMuted: isMuted)
+        let initialScale = isMuted ? 0.0 : initialAmplitude
+        self.renderGain = initialScale
+        self.renderTargetGain = initialScale
     }
 
     deinit {
-        stop()
+        _ = stop()
     }
 
     // MARK: - Lifecycle
 
-    /// Creates the process tap, wraps it in a private aggregate device,
-    /// attaches an IOProc, and starts the device.
     func start() throws {
-        // 1. Create a CATapDescription targeting this process.
-        //    muteBehavior .muted means the process's audio is intercepted —
-        //    it no longer goes directly to the hardware. We read it, scale it,
-        //    and re-route it ourselves.
+        _ = stop()
+
+        let (defaultOutputID, outputUID) = try Self.defaultOutputDevice()
         let tapDescription = CATapDescription(stereoMixdownOfProcesses: process.allObjectIDs)
         tapDescription.uuid = UUID()
         tapDescription.muteBehavior = .mutedWhenTapped
@@ -90,58 +70,26 @@ final class AppAudioTap {
 
         var createdTapID = AudioObjectID(kAudioObjectUnknown)
         let tapStatus = AudioHardwareCreateProcessTap(tapDescription, &createdTapID)
-        logger.info("CreateProcessTap for \(self.process.name) (objIDs=\(self.process.allObjectIDs)): status=\(tapStatus), tapID=\(createdTapID)")
         guard tapStatus == kAudioHardwareNoError, createdTapID != kAudioObjectUnknown else {
-            throw TapError.tapCreationFailed(tapStatus)
+            throw TapError(.tapCreation, status: tapStatus)
         }
         tapID = createdTapID
 
-        // 2. Get the default output device UID so we can include it in the aggregate.
-        var defaultOutputID = AudioObjectID(kAudioObjectUnknown)
-        var defaultOutputSize = UInt32(MemoryLayout<AudioObjectID>.size)
-        var defaultOutputAddr = AudioObjectPropertyAddress(
-            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-        AudioObjectGetPropertyData(
-            AudioObjectID(kAudioObjectSystemObject),
-            &defaultOutputAddr,
-            0, nil,
-            &defaultOutputSize,
-            &defaultOutputID
-        )
-
-        // Get the output device UID string.
-        var outputUIDAddr = AudioObjectPropertyAddress(
-            mSelector: kAudioDevicePropertyDeviceUID,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-        var outputUIDRef: Unmanaged<CFString>?
-        var outputUIDSize = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
-        AudioObjectGetPropertyData(
-            defaultOutputID,
-            &outputUIDAddr,
-            0, nil,
-            &outputUIDSize,
-            &outputUIDRef
-        )
-        guard let outputUID = outputUIDRef?.takeRetainedValue() as String? else {
-            logger.error("Failed to get output device UID")
-            AudioHardwareDestroyProcessTap(tapID)
-            tapID = kAudioObjectUnknown
-            throw TapError.tapCreationFailed(kAudioHardwareUnspecifiedError)
+        do {
+            tapFormat = try readTapFormat()
+            try validateTapFormat(tapFormat)
+        } catch {
+            _ = stop()
+            throw error
         }
 
-        logger.info("Output device: id=\(defaultOutputID), uid=\(outputUID)")
+        let sampleRate = tapFormat.mSampleRate > 0 ? tapFormat.mSampleRate : 44_100
+        renderRampSamples = max(Int(sampleRate * 0.008), 64)
 
-        // 3. Wrap the tap in a private aggregate device with the real output device,
-        //    so the IOProc can read tapped audio and write it to hardware.
         let tapUID = tapDescription.uuid.uuidString
         let aggUID = UUID().uuidString
         let aggProps: [String: Any] = [
-            kAudioAggregateDeviceNameKey: "Fader-\(self.process.pid)",
+            kAudioAggregateDeviceNameKey: "Fader-\(process.pid)",
             kAudioAggregateDeviceUIDKey: aggUID,
             kAudioAggregateDeviceMainSubDeviceKey: outputUID,
             kAudioAggregateDeviceIsPrivateKey: true,
@@ -158,148 +106,254 @@ final class AppAudioTap {
             ]
         ]
 
-        logger.info("Creating aggregate device with tapUID=\(tapUID), outputUID=\(outputUID)")
         var createdAggID = AudioObjectID(kAudioObjectUnknown)
         let aggStatus = AudioHardwareCreateAggregateDevice(aggProps as CFDictionary, &createdAggID)
-        logger.info("CreateAggregateDevice: status=\(aggStatus), aggID=\(createdAggID)")
         guard aggStatus == kAudioHardwareNoError, createdAggID != kAudioObjectUnknown else {
-            AudioHardwareDestroyProcessTap(tapID)
-            tapID = kAudioObjectUnknown
-            throw TapError.aggregateDeviceCreationFailed(aggStatus)
+            _ = stop()
+            throw TapError(.aggregateDeviceCreation, status: aggStatus)
         }
         aggregateDeviceID = createdAggID
 
-        // 4. Attach an IOProc and start the aggregate device.
         var procID: AudioDeviceIOProcID?
         let procStatus = AudioDeviceCreateIOProcIDWithBlock(&procID, aggregateDeviceID, nil) {
-            [weak self] (inNow, inInputData, inInputTime, outOutputData, inOutputTime) in
-            self?.ioProc(inputData: inInputData, outputData: outOutputData)
+            [unowned self] _, inputData, _, outputData, _ in
+            self.ioProc(inputData: inputData, outputData: outputData)
         }
-        logger.info("CreateIOProcIDWithBlock: status=\(procStatus)")
-
         guard procStatus == kAudioHardwareNoError, let validProcID = procID else {
-            AudioHardwareDestroyAggregateDevice(aggregateDeviceID)
-            AudioHardwareDestroyProcessTap(tapID)
-            aggregateDeviceID = kAudioObjectUnknown
-            tapID = kAudioObjectUnknown
-            throw TapError.ioProcCreationFailed(procStatus)
+            _ = stop()
+            throw TapError(.ioProcCreation, status: procStatus)
         }
         ioProcID = validProcID
 
-        let startStatus = AudioDeviceStart(aggregateDeviceID, ioProcID)
-        logger.info("AudioDeviceStart: status=\(startStatus)")
-        if startStatus != kAudioHardwareNoError {
-            AudioDeviceDestroyIOProcID(aggregateDeviceID, ioProcID!)
-            AudioHardwareDestroyAggregateDevice(aggregateDeviceID)
-            AudioHardwareDestroyProcessTap(tapID)
-            ioProcID = nil
-            aggregateDeviceID = kAudioObjectUnknown
-            tapID = kAudioObjectUnknown
-            throw TapError.startFailed(startStatus)
+        let startStatus = AudioDeviceStart(aggregateDeviceID, validProcID)
+        guard startStatus == kAudioHardwareNoError else {
+            _ = stop()
+            throw TapError(.deviceStart, status: startStatus)
         }
+
+        let config = TapConfiguration(
+            processPID: process.pid,
+            objectIDSignature: process.objectIDSignature,
+            outputDeviceUID: outputUID
+        )
+        configuration = config
+        status = .running(config)
+        logger.info("Started tap for \(self.process.name) outputDevice=\(defaultOutputID) uid=\(outputUID)")
     }
 
-    /// Smoothly ramp amplitude to `target` over `duration` seconds via the IOProc.
-    func fadeToAmplitude(_ target: Float, duration: TimeInterval = 0.5) {
-        os_unfair_lock_lock(&_lock)
-        let current = _amplitude
-        // ~86 IOProc callbacks/sec (44100 / 512)
-        let totalSteps = max(Float(duration) * 86.0, 1.0)
-        if abs(current - target) < 0.001 {
-            _amplitude = target
-            _fadeTarget = target
-            _fadeStep = 0
-        } else {
-            _fadeTarget = target
-            _fadeStep = (target - current) / totalSteps
-        }
-        os_unfair_lock_unlock(&_lock)
-    }
+    @discardableResult
+    func stop() -> [TapError] {
+        var errors: [TapError] = []
 
-    /// Stops the tap and releases all CoreAudio resources.
-    func stop() {
         if let procID = ioProcID, aggregateDeviceID != kAudioObjectUnknown {
-            AudioDeviceStop(aggregateDeviceID, procID)
-            AudioDeviceDestroyIOProcID(aggregateDeviceID, procID)
+            let stopStatus = AudioDeviceStop(aggregateDeviceID, procID)
+            if stopStatus != kAudioHardwareNoError {
+                errors.append(TapError(.deviceStop, status: stopStatus))
+            }
+            let destroyStatus = AudioDeviceDestroyIOProcID(aggregateDeviceID, procID)
+            if destroyStatus != kAudioHardwareNoError {
+                errors.append(TapError(.ioProcDestroy, status: destroyStatus))
+            }
             ioProcID = nil
         }
+
         if aggregateDeviceID != kAudioObjectUnknown {
-            AudioHardwareDestroyAggregateDevice(aggregateDeviceID)
+            let destroyStatus = AudioHardwareDestroyAggregateDevice(aggregateDeviceID)
+            if destroyStatus != kAudioHardwareNoError {
+                errors.append(TapError(.aggregateDeviceDestroy, status: destroyStatus))
+            }
             aggregateDeviceID = kAudioObjectUnknown
         }
+
         if tapID != kAudioObjectUnknown {
-            AudioHardwareDestroyProcessTap(tapID)
+            let destroyStatus = AudioHardwareDestroyProcessTap(tapID)
+            if destroyStatus != kAudioHardwareNoError {
+                errors.append(TapError(.tapDestroy, status: destroyStatus))
+            }
             tapID = kAudioObjectUnknown
+        }
+
+        configuration = nil
+        status = errors.isEmpty ? .stopped : .failed(errors.map(\.localizedDescription).joined(separator: "\n"))
+        return errors
+    }
+
+    // MARK: - CoreAudio Helpers
+
+    static func defaultOutputDevice() throws -> (AudioObjectID, String) {
+        var defaultOutputID = AudioObjectID(kAudioObjectUnknown)
+        var defaultOutputSize = UInt32(MemoryLayout<AudioObjectID>.size)
+        var defaultOutputAddr = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        let outputStatus = AudioObjectGetPropertyData(
+            AudioObjectID(kAudioObjectSystemObject),
+            &defaultOutputAddr,
+            0, nil,
+            &defaultOutputSize,
+            &defaultOutputID
+        )
+        guard outputStatus == kAudioHardwareNoError, defaultOutputID != kAudioObjectUnknown else {
+            throw TapError(.defaultOutputDevice, status: outputStatus)
+        }
+
+        var outputUIDAddr = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyDeviceUID,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var outputUIDRef: Unmanaged<CFString>?
+        var outputUIDSize = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
+        let uidStatus = AudioObjectGetPropertyData(
+            defaultOutputID,
+            &outputUIDAddr,
+            0, nil,
+            &outputUIDSize,
+            &outputUIDRef
+        )
+        guard uidStatus == kAudioHardwareNoError,
+              let outputUID = outputUIDRef?.takeRetainedValue() as String? else {
+            throw TapError(.outputDeviceUID, status: uidStatus)
+        }
+
+        return (defaultOutputID, outputUID)
+    }
+
+    private func readTapFormat() throws -> AudioStreamBasicDescription {
+        var format = AudioStreamBasicDescription()
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioTapPropertyFormat,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var size = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
+        let status = AudioObjectGetPropertyData(tapID, &address, 0, nil, &size, &format)
+        guard status == kAudioHardwareNoError else {
+            throw TapError(.tapFormat, status: status)
+        }
+        return format
+    }
+
+    private func validateTapFormat(_ format: AudioStreamBasicDescription) throws {
+        let isFloat = (format.mFormatFlags & kAudioFormatFlagIsFloat) != 0
+        guard format.mFormatID == kAudioFormatLinearPCM,
+              isFloat,
+              format.mBitsPerChannel == 32 else {
+            let detail = "Expected 32-bit float PCM, got formatID \(format.mFormatID), flags \(format.mFormatFlags), bits \(format.mBitsPerChannel)."
+            throw TapError(.unsupportedFormat, status: kAudioHardwareUnsupportedOperationError, detail: detail)
         }
     }
 
-    // MARK: - Audio Thread (real-time, no allocations, no ObjC)
+    // MARK: - Audio Thread
 
     private func ioProc(
         inputData: UnsafePointer<AudioBufferList>,
         outputData: UnsafeMutablePointer<AudioBufferList>
     ) {
-        os_unfair_lock_lock(&_lock)
-        // Apply fade stepping toward target amplitude.
-        if _fadeStep != 0 {
-            _amplitude += _fadeStep
-            if (_fadeStep > 0 && _amplitude >= _fadeTarget) || (_fadeStep < 0 && _amplitude <= _fadeTarget) {
-                _amplitude = _fadeTarget
-                _fadeStep = 0
-            }
-        }
-        let scale: Float = _isMuted ? 0.0 : _amplitude
-        _ioProcCallCount += 1
-        let callCount = _ioProcCallCount
-        os_unfair_lock_unlock(&_lock)
-
-        if callCount == 1 || callCount % 1000 == 0 {
-            let inCount = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: inputData)).count
-            let outCount = UnsafeMutableAudioBufferListPointer(outputData).count
-            logger.info("IOProc #\(callCount): scale=\(scale), inBufs=\(inCount), outBufs=\(outCount)")
+        let target = parameters.targetScale
+        if target != renderTargetGain {
+            renderTargetGain = target
+            renderRampRemaining = renderRampSamples
+            renderRampStep = (target - renderGain) / Float(renderRampRemaining)
         }
 
         let inputABL = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: inputData))
         let outputABL = UnsafeMutableAudioBufferListPointer(outputData)
-
         let bufferCount = min(inputABL.count, outputABL.count)
+        var consumedRampSamples = 0
+
         for i in 0..<bufferCount {
             let srcBuf = inputABL[i]
             let dstBuf = outputABL[i]
-            guard let srcData = srcBuf.mData, let dstData = dstBuf.mData else { continue }
-            let byteCount = Int(min(srcBuf.mDataByteSize, dstBuf.mDataByteSize))
-            let frameCount = byteCount / MemoryLayout<Float32>.size
-
-            if scale == 1.0 {
-                memcpy(dstData, srcData, byteCount)
-            } else if scale == 0.0 {
+            guard let dstData = dstBuf.mData else { continue }
+            guard let srcData = srcBuf.mData else {
                 memset(dstData, 0, Int(dstBuf.mDataByteSize))
+                continue
+            }
+
+            let byteCount = Int(min(srcBuf.mDataByteSize, dstBuf.mDataByteSize))
+            let sampleCount = byteCount / MemoryLayout<Float32>.size
+
+            if byteCount == 0 || byteCount % MemoryLayout<Float32>.size != 0 {
+                memset(dstData, 0, Int(dstBuf.mDataByteSize))
+                continue
+            }
+
+            let src = srcData.assumingMemoryBound(to: Float32.self)
+            let dst = dstData.assumingMemoryBound(to: Float32.self)
+
+            if renderRampRemaining > 0 {
+                applyRamp(src: src, dst: dst, sampleCount: sampleCount)
+                consumedRampSamples = max(consumedRampSamples, min(sampleCount, renderRampRemaining))
+            } else if renderGain == 1.0 {
+                memcpy(dstData, srcData, byteCount)
+            } else if renderGain == 0.0 {
+                memset(dstData, 0, byteCount)
             } else {
-                let src = srcData.assumingMemoryBound(to: Float32.self)
-                let dst = dstData.assumingMemoryBound(to: Float32.self)
-                vDSP_vsmul(src, 1, [scale], dst, 1, vDSP_Length(frameCount))
+                var scale = renderGain
+                withUnsafePointer(to: &scale) { scalePointer in
+                    vDSP_vsmul(src, 1, scalePointer, dst, 1, vDSP_Length(sampleCount))
+                }
+            }
+
+            if dstBuf.mDataByteSize > byteCount {
+                memset(dstData.advanced(by: byteCount), 0, Int(dstBuf.mDataByteSize) - byteCount)
+            }
+        }
+
+        if renderRampRemaining > 0 {
+            renderRampRemaining -= consumedRampSamples
+            if renderRampRemaining <= 0 {
+                renderGain = renderTargetGain
+                renderRampStep = 0
+                renderRampRemaining = 0
+            } else {
+                renderGain += renderRampStep * Float(consumedRampSamples)
+            }
+        }
+
+        if outputABL.count > bufferCount {
+            for i in bufferCount..<outputABL.count {
+                if let dstData = outputABL[i].mData {
+                    memset(dstData, 0, Int(outputABL[i].mDataByteSize))
+                }
             }
         }
     }
 
-    // MARK: - Errors
+    private func applyRamp(
+        src: UnsafePointer<Float32>,
+        dst: UnsafeMutablePointer<Float32>,
+        sampleCount: Int
+    ) {
+        var gain = renderGain
+        let rampedSamples = min(sampleCount, renderRampRemaining)
 
-    enum TapError: Error, LocalizedError {
-        case tapCreationFailed(OSStatus)
-        case aggregateDeviceCreationFailed(OSStatus)
-        case ioProcCreationFailed(OSStatus)
-        case startFailed(OSStatus)
+        for index in 0..<rampedSamples {
+            dst[index] = src[index] * gain
+            gain += renderRampStep
+        }
 
-        var errorDescription: String? {
-            switch self {
-            case .tapCreationFailed(let code):
-                return "Failed to create process tap (OSStatus \(code))."
-            case .aggregateDeviceCreationFailed(let code):
-                return "Failed to create aggregate device (OSStatus \(code))."
-            case .ioProcCreationFailed(let code):
-                return "Failed to create IOProc (OSStatus \(code))."
-            case .startFailed(let code):
-                return "Failed to start audio device (OSStatus \(code))."
+        if rampedSamples < sampleCount {
+            let stableGain = renderTargetGain
+            if stableGain == 1.0 {
+                memcpy(dst.advanced(by: rampedSamples), src.advanced(by: rampedSamples), (sampleCount - rampedSamples) * MemoryLayout<Float32>.size)
+            } else if stableGain == 0.0 {
+                memset(dst.advanced(by: rampedSamples), 0, (sampleCount - rampedSamples) * MemoryLayout<Float32>.size)
+            } else {
+                var scale = stableGain
+                withUnsafePointer(to: &scale) { scalePointer in
+                    vDSP_vsmul(
+                        src.advanced(by: rampedSamples),
+                        1,
+                        scalePointer,
+                        dst.advanced(by: rampedSamples),
+                        1,
+                        vDSP_Length(sampleCount - rampedSamples)
+                    )
+                }
             }
         }
     }

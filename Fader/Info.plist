@@ -25,11 +25,11 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAudioCaptureUsageDescription</key>
-	<string>Fader needs access to system audio to control per-app volume.</string>
+	<string>Fader captures system and app output locally so it can control per-app volume. It does not record or transmit audio.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Fader needs access to system audio to control per-app volume.</string>
+	<string>Fader does not record microphone audio. This key is present only for macOS audio permission compatibility.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 </dict>

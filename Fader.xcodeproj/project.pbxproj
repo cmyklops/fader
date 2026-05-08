@@ -8,6 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		14620F11EBB084B83485FC3C /* AppAudioTap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465F9D091F9A19553DE9DA99 /* AppAudioTap.swift */; };
+		5B0F00000000000000000002 /* TapTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B0F00000000000000000001 /* TapTypes.swift */; };
+		5B0F00000000000000000004 /* DiagnosticsReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B0F00000000000000000003 /* DiagnosticsReport.swift */; };
+		5B0F00000000000000000022 /* VolumeConverterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B0F00000000000000000020 /* VolumeConverterTests.swift */; };
+		5B0F00000000000000000023 /* PreferencesAndDiagnosticsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B0F00000000000000000021 /* PreferencesAndDiagnosticsTests.swift */; };
+		5B0F00000000000000000042 /* Atomics in Frameworks */ = {isa = PBXBuildFile; productRef = 5B0F00000000000000000041 /* Atomics */; };
+		5B0F00000000000000000052 /* ProcessInfo+Testing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B0F00000000000000000051 /* ProcessInfo+Testing.swift */; };
 		75D2472D60B5C07F7BEC1E6A /* MixerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF949813215B5B4A28726AF /* MixerView.swift */; };
 		75FEEE274220EAF3C29F87A5 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80255D9AA9282402DA4BCCD4 /* Accelerate.framework */; };
 		7995676CD44A06DC2A8900CF /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D68FEE7F1B42ABF4390772DC /* AudioToolbox.framework */; };
@@ -21,12 +27,28 @@
 		EB6FD9143A6F9DBDDF1AA0B7 /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A54C7DCE4863DA140FE43B9 /* ServiceManagement.framework */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		5B0F00000000000000000034 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8DEBF0C286BE8BBA2E51C9EA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D1E7D2647C3B8626D11EDB09;
+			remoteInfo = Fader;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		1FBF08DD1030450F64258E84 /* FaderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaderApp.swift; sourceTree = "<group>"; };
 		465F9D091F9A19553DE9DA99 /* AppAudioTap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAudioTap.swift; sourceTree = "<group>"; };
 		4A54C7DCE4863DA140FE43B9 /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
 		51F7EE24C437D426454EA6E3 /* AudioTapManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTapManager.swift; sourceTree = "<group>"; };
 		5569CA7CF10A34017D504335 /* TapDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapDiagnostics.swift; sourceTree = "<group>"; };
+		5B0F00000000000000000001 /* TapTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapTypes.swift; sourceTree = "<group>"; };
+		5B0F00000000000000000003 /* DiagnosticsReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsReport.swift; sourceTree = "<group>"; };
+		5B0F00000000000000000020 /* VolumeConverterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeConverterTests.swift; sourceTree = "<group>"; };
+		5B0F00000000000000000021 /* PreferencesAndDiagnosticsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesAndDiagnosticsTests.swift; sourceTree = "<group>"; };
+		5B0F00000000000000000024 /* FaderTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FaderTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5B0F00000000000000000051 /* ProcessInfo+Testing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProcessInfo+Testing.swift"; sourceTree = "<group>"; };
 		7DC0718D031461342C9156F1 /* Fader.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Fader.entitlements; sourceTree = "<group>"; };
 		7FA739336750C590D76FA85B /* AudioProcessMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioProcessMonitor.swift; sourceTree = "<group>"; };
 		80255D9AA9282402DA4BCCD4 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
@@ -48,6 +70,14 @@
 				CCBA76A3C25C588DD7833478 /* CoreAudio.framework in Frameworks */,
 				7995676CD44A06DC2A8900CF /* AudioToolbox.framework in Frameworks */,
 				EB6FD9143A6F9DBDDF1AA0B7 /* ServiceManagement.framework in Frameworks */,
+				5B0F00000000000000000042 /* Atomics in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5B0F00000000000000000032 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -62,6 +92,7 @@
 				1FBF08DD1030450F64258E84 /* FaderApp.swift */,
 				F98FB3ECDFC1A5C685973625 /* Info.plist */,
 				CFB2EE01E95A477E2CF722A6 /* Audio */,
+				5B0F00000000000000000050 /* Support */,
 				56757EEC9FB5FF6CFA2C654D /* UI */,
 			);
 			path = Fader;
@@ -71,6 +102,7 @@
 			isa = PBXGroup;
 			children = (
 				D70CD5AA03F4F4B745F2D905 /* Fader.app */,
+				5B0F00000000000000000024 /* FaderTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -100,16 +132,36 @@
 				465F9D091F9A19553DE9DA99 /* AppAudioTap.swift */,
 				7FA739336750C590D76FA85B /* AudioProcessMonitor.swift */,
 				51F7EE24C437D426454EA6E3 /* AudioTapManager.swift */,
+				5B0F00000000000000000003 /* DiagnosticsReport.swift */,
 				5569CA7CF10A34017D504335 /* TapDiagnostics.swift */,
+				5B0F00000000000000000001 /* TapTypes.swift */,
 				971FC09CFB41BF4CED54CDF9 /* VolumeConverter.swift */,
 			);
 			path = Audio;
+			sourceTree = "<group>";
+		};
+		5B0F00000000000000000025 /* FaderTests */ = {
+			isa = PBXGroup;
+			children = (
+				5B0F00000000000000000021 /* PreferencesAndDiagnosticsTests.swift */,
+				5B0F00000000000000000020 /* VolumeConverterTests.swift */,
+			);
+			path = FaderTests;
+			sourceTree = "<group>";
+		};
+		5B0F00000000000000000050 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				5B0F00000000000000000051 /* ProcessInfo+Testing.swift */,
+			);
+			path = Support;
 			sourceTree = "<group>";
 		};
 		FB4F61E0929FFD8BE891AE64 = {
 			isa = PBXGroup;
 			children = (
 				3A7CBCA8692D1D6F4EB3F920 /* Fader */,
+				5B0F00000000000000000025 /* FaderTests */,
 				CE2D179E9F890837084362CB /* Frameworks */,
 				4534AC129B4969435E4DDC2A /* Products */,
 			);
@@ -131,9 +183,30 @@
 			dependencies = (
 			);
 			name = Fader;
+			packageProductDependencies = (
+				5B0F00000000000000000041 /* Atomics */,
+			);
 			productName = Fader;
 			productReference = D70CD5AA03F4F4B745F2D905 /* Fader.app */;
 			productType = "com.apple.product-type.application";
+		};
+		5B0F00000000000000000026 /* FaderTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5B0F00000000000000000037 /* Build configuration list for PBXNativeTarget "FaderTests" */;
+			buildPhases = (
+				5B0F00000000000000000030 /* Sources */,
+				5B0F00000000000000000031 /* Resources */,
+				5B0F00000000000000000032 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5B0F00000000000000000033 /* PBXTargetDependency */,
+			);
+			name = FaderTests;
+			productName = FaderTests;
+			productReference = 5B0F00000000000000000024 /* FaderTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -148,6 +221,11 @@
 						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
+					5B0F00000000000000000026 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+						TestTargetID = D1E7D2647C3B8626D11EDB09;
+					};
 				};
 			};
 			buildConfigurationList = 2497EEE39760838D52079795 /* Build configuration list for PBXProject "Fader" */;
@@ -159,10 +237,14 @@
 				en,
 			);
 			mainGroup = FB4F61E0929FFD8BE891AE64;
+			packageReferences = (
+				5B0F00000000000000000040 /* XCRemoteSwiftPackageReference "swift-atomics" */,
+			);
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				D1E7D2647C3B8626D11EDB09 /* Fader */,
+				5B0F00000000000000000026 /* FaderTests */,
 			);
 		};
 /* End PBXProject section */
@@ -176,6 +258,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5B0F00000000000000000031 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -186,14 +275,34 @@
 				14620F11EBB084B83485FC3C /* AppAudioTap.swift in Sources */,
 				B282CF1EA4B795836598778B /* AudioProcessMonitor.swift in Sources */,
 				D80840440110DAA951EC9D36 /* AudioTapManager.swift in Sources */,
+				5B0F00000000000000000004 /* DiagnosticsReport.swift in Sources */,
 				BF9C25CAD2CFF53A9FA6EF06 /* FaderApp.swift in Sources */,
 				75D2472D60B5C07F7BEC1E6A /* MixerView.swift in Sources */,
+				5B0F00000000000000000052 /* ProcessInfo+Testing.swift in Sources */,
 				C41C72714E9CC295BA9EB217 /* TapDiagnostics.swift in Sources */,
+				5B0F00000000000000000002 /* TapTypes.swift in Sources */,
 				92766263FCA13966336CBEFE /* VolumeConverter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5B0F00000000000000000030 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5B0F00000000000000000023 /* PreferencesAndDiagnosticsTests.swift in Sources */,
+				5B0F00000000000000000022 /* VolumeConverterTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		5B0F00000000000000000033 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D1E7D2647C3B8626D11EDB09 /* Fader */;
+			targetProxy = 5B0F00000000000000000034 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		0A924775D073DCE7762BB88D /* Release */ = {
@@ -302,6 +411,50 @@
 			};
 			name = Debug;
 		};
+		5B0F00000000000000000035 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mattwesdock.FaderTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Fader.app/Contents/MacOS/Fader";
+			};
+			name = Debug;
+		};
+		5B0F00000000000000000036 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mattwesdock.FaderTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Fader.app/Contents/MacOS/Fader";
+			};
+			name = Release;
+		};
 		CD5D9CCE764CD0252585ED0A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -382,7 +535,35 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		5B0F00000000000000000037 /* Build configuration list for PBXNativeTarget "FaderTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5B0F00000000000000000035 /* Debug */,
+				5B0F00000000000000000036 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		5B0F00000000000000000040 /* XCRemoteSwiftPackageReference "swift-atomics" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-atomics.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		5B0F00000000000000000041 /* Atomics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5B0F00000000000000000040 /* XCRemoteSwiftPackageReference "swift-atomics" */;
+			productName = Atomics;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 8DEBF0C286BE8BBA2E51C9EA /* Project object */;
 }
