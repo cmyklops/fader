@@ -116,7 +116,8 @@ final class AudioTapManager {
 
     private let processMonitor = AudioProcessMonitor()
     private var activeTaps: [pid_t: AppAudioTap] = [:]
-    private var defaultOutputDeviceListenerBlock: AudioObjectPropertyListenerBlock?
+    private var outputDeviceListenerBlocks: [(selector: AudioObjectPropertySelector, block: AudioObjectPropertyListenerBlock)] = []
+    private var outputRouteRefreshTask: Task<Void, Never>?
     private var workspaceObserverTokens: [NSObjectProtocol] = []
     private var isShuttingDown = false
 
@@ -151,6 +152,8 @@ final class AudioTapManager {
         guard !isShuttingDown else { return }
         isShuttingDown = true
 
+        outputRouteRefreshTask?.cancel()
+        outputRouteRefreshTask = nil
         removeDefaultOutputDeviceListener()
         for token in workspaceObserverTokens {
             NSWorkspace.shared.notificationCenter.removeObserver(token)
@@ -230,45 +233,73 @@ final class AudioTapManager {
     }
 
     private func startObservingDefaultOutputDevice() {
-        let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
-            Task { @MainActor [weak self] in
-                self?.restartAllTaps()
+        let selectors: [AudioObjectPropertySelector] = [
+            kAudioHardwarePropertyDefaultOutputDevice,
+            kAudioHardwarePropertyDefaultSystemOutputDevice,
+            kAudioHardwarePropertyDevices
+        ]
+
+        for selector in selectors {
+            let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
+                Task { @MainActor [weak self] in
+                    self?.scheduleOutputRouteRefresh()
+                }
             }
-        }
-        defaultOutputDeviceListenerBlock = block
-        var address = AudioObjectPropertyAddress(
-            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-        let status = AudioObjectAddPropertyListenerBlock(
-            AudioObjectID(kAudioObjectSystemObject),
-            &address,
-            DispatchQueue.main,
-            block
-        )
-        if status != kAudioHardwareNoError {
-            record(TapError(.listenerRegistration, status: status, detail: "Default output device changes will require manual refresh."))
+            var address = AudioObjectPropertyAddress(
+                mSelector: selector,
+                mScope: kAudioObjectPropertyScopeGlobal,
+                mElement: kAudioObjectPropertyElementMain
+            )
+            let status = AudioObjectAddPropertyListenerBlock(
+                AudioObjectID(kAudioObjectSystemObject),
+                &address,
+                DispatchQueue.main,
+                block
+            )
+            if status == kAudioHardwareNoError {
+                outputDeviceListenerBlocks.append((selector, block))
+            } else {
+                record(TapError(.listenerRegistration, status: status, detail: "Output device changes may require manual refresh."))
+            }
         }
     }
 
     private func removeDefaultOutputDeviceListener() {
-        guard let block = defaultOutputDeviceListenerBlock else { return }
-        var address = AudioObjectPropertyAddress(
-            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-        let status = AudioObjectRemovePropertyListenerBlock(
-            AudioObjectID(kAudioObjectSystemObject),
-            &address,
-            DispatchQueue.main,
-            block
-        )
-        if status != kAudioHardwareNoError {
-            record(TapError(.listenerRegistration, status: status, detail: "Failed to remove default output listener."))
+        for (selector, block) in outputDeviceListenerBlocks {
+            var address = AudioObjectPropertyAddress(
+                mSelector: selector,
+                mScope: kAudioObjectPropertyScopeGlobal,
+                mElement: kAudioObjectPropertyElementMain
+            )
+            let status = AudioObjectRemovePropertyListenerBlock(
+                AudioObjectID(kAudioObjectSystemObject),
+                &address,
+                DispatchQueue.main,
+                block
+            )
+            if status != kAudioHardwareNoError {
+                record(TapError(.listenerRegistration, status: status, detail: "Failed to remove output device listener."))
+            }
         }
-        defaultOutputDeviceListenerBlock = nil
+        outputDeviceListenerBlocks.removeAll()
+    }
+
+    private func scheduleOutputRouteRefresh() {
+        guard !isShuttingDown else { return }
+        outputRouteRefreshTask?.cancel()
+        outputRouteRefreshTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            try? await Task.sleep(nanoseconds: 250_000_000)
+            guard !Task.isCancelled, !self.isShuttingDown else { return }
+            self.refresh()
+            self.restartAllTaps()
+
+            try? await Task.sleep(nanoseconds: 1_250_000_000)
+            guard !Task.isCancelled, !self.isShuttingDown else { return }
+            self.refresh()
+            self.restartAllTaps()
+        }
     }
 
     private func startObservingWorkspacePowerState() {
